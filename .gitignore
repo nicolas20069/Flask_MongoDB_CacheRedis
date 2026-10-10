@@ -1,0 +1,37 @@
+# Entorno virtual de Python
+venv/
+.venv/
+env/
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Cachés de testing y herramientas
+.pytest_cache/
+.mypy_cache/
+.pyre/
+
+# Variables de entorno y secretos
+.env
+.env.*
+
+# Configuración local del editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Datos locales de bases o servicios
+mongodb-data/
+redis-data/
+
+# Logs y temporales
+*.log
+*.tmp

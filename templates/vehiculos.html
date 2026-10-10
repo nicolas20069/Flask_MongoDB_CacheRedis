@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Vehículos 🚗</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Tabla de Vehículos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Vehículo</th>
+                <th>Categoría</th>
+                <th>Peso</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in vehiculos %}
+            <tr>
+                <td>{{ v.vehiculo }}</td>
+                <td>{{ v.categoria }}</td>
+                <td>{{ v.peso }}</td>
+                <td>{{ v.descripcion }}</td>
+            </tr>
+            {% endfor %}
+    </table>
+</body>
+</html>

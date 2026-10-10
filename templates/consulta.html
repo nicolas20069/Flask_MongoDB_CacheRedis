@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Vehículos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Consulta de Vehículos</h2>
+    <form action="/consulta" method="GET">
+        <label for="nombre">Nombre del Vehículo:</label>
+        <input type="text" id="nombre" name="nombre" required>
+        <button type="submit">Consultar</button>
+    </form>
+
+    {% if resultado is not none %}
+    <!-- si resultado existe -->
+        {% if resultado and 'data' in resultado %}
+        <div class="resultado"> 
+            <h3>Resultado de la Consulta:</h3> 
+            <p>Vehículo: {{resultado['data']['vehiculo']}}</p> <!-- trae el nombre del vehículo -->
+            <p>Categoría: {{resultado['data']['categoria']}}</p> <!-- trae la categoría del vehículo -->
+            <p>Peso: {{resultado['data']['peso_toneladas']}}</p> 
+            <p>Descripción: {{resultado['data']['descripcion']}}</p>
+            <p>Source: {{resultado['source']}}</p> 
+        </div>
+        {% else %}
+        <div class="resultado">
+            <p><strong> No se encontró el vehículo.</strong></p>
+        </div>
+        {% endif %}  
+    {% endif %}
+</body>
+</html>

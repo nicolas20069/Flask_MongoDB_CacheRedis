@@ -5,6 +5,23 @@ from config import vehiculos_collection, cache
 app = Flask(__name__)
 
 
+# Función auxiliar para guardar en caché aplicando las condiciones de expiración
+def guardar_en_cache(nombre, vehiculo):
+    # La condición de la descripción tiene prioridad sobre las demás:
+    # si la descripción supera los 20 caracteres no se almacena en caché
+    descripcion = vehiculo.get("descripcion") or ""
+    if len(descripcion) > 20:
+        return
+
+    # El tiempo de expiración depende de la cantidad de caracteres del nombre del vehículo
+    if len(nombre) <= 5:
+        cache.setex(nombre, 15, str(vehiculo))
+    elif len(nombre) <= 10:
+        cache.setex(nombre, 20, str(vehiculo))
+    else:
+        cache.setex(nombre, 40, str(vehiculo))
+
+
 # Rutas de la API
 # Ruta para obtener todos los vehículos
 @app.route("/vehiculos/<nombre>", methods=["GET"])
@@ -21,26 +38,53 @@ def get_vehiculo(nombre):
     if vehiculo:
         vehiculo["_id"] = str(vehiculo["_id"])  # Convertir ObjectId a string
 
-        # Guardar el vehículo en la caché con un tiempo de expiración de 15 segundos si el nombre tiene 5 caracteres o menos
-        # Por el momento de lo contrario lo guarda sin tiempo de expiración
-        if len(nombre) <= 5:
-            cache.setex(
-                nombre, 15, str(vehiculo)
-            )  # Guardar en Redis con tiempo de expiración de 15 segundos
-        # Guardar el vehiculo en el caché si tiene mas de 5 caracteres y menor o igual 10
-        elif len(nombre) <= 10:
-            cache.setex(
-                nombre, 20, str(vehiculo)
-            )  # Guardar en redis con tiempo de expiración de 20 segundos
-        else:
-            # Guardar en Redis sin tiempo de expiración
-            cache.set(
-                nombre, str(vehiculo)
-            )  # Modificar para guardar con tiempo de expiracion adecuado
+        # Guardar el vehículo en la caché según las condiciones de expiración
+        guardar_en_cache(nombre, vehiculo)
         return jsonify({"data": vehiculo, "source": "MongoDB"}), 200
 
     else:
         return jsonify({"error": "Vehículo no encontrado"}), 404
+
+
+# Metodo de actualizar
+@app.route("/vehiculos/<nombre>", methods=["PUT"])
+def put_vehiculo(nombre):
+    data = request.get_json(silent=True)
+    if not data:
+        return (
+            jsonify({"error": "Debe enviar los datos del vehículo en formato JSON"}),
+            400,
+        )
+
+    # No permitir modificar el _id del documento
+    data.pop("_id", None)
+
+    # Actualizar el vehículo en MongoDB
+    resultado = vehiculos_collection.update_one({"vehiculo": nombre}, {"$set": data})
+    if resultado.matched_count == 0:
+        return jsonify({"error": "Vehículo no encontrado"}), 404
+
+    # Invalidar la caché del nombre anterior y del nuevo (si cambió) para evitar inconsistencias
+    cache.delete(nombre)
+    nuevo_nombre = data.get("vehiculo")
+    if nuevo_nombre and nuevo_nombre != nombre:
+        cache.delete(nuevo_nombre)
+
+    # Devolver el vehículo actualizado
+    vehiculo = vehiculos_collection.find_one({"vehiculo": nuevo_nombre or nombre})
+    if vehiculo:
+        vehiculo["_id"] = str(vehiculo["_id"])
+
+    return (
+        jsonify(
+            {
+                "data": vehiculo,
+                "source": "MongoDB",
+                "mensaje": "Vehículo actualizado",
+            }
+        ),
+        200,
+    )
 
 
 # Metodo de eliminar
@@ -82,15 +126,8 @@ def consulta():
         v = vehiculos_collection.find_one({"vehiculo": nombre})
         if v:
             v["_id"] = str(v["_id"])  # Convertir ObjectId a string
-            if len(nombre) <= 5:
-                cache.setex(
-                    nombre, 15, str(v)
-                )  # Guardar en Redis con tiempo de expiración de 15 segundos
-                # Guardar el vehiculo en el caché si tiene mas de 5 caracteres y menor o igual 10
-            elif len(nombre) <= 10:
-                cache.setex(nombre, 20, str(v))  # tiempo de expiración de 20 segundos
-            else:
-                cache.set(nombre, str(v))  # Guardar en Redis sin tiempo de expiración
+            # Guardar en caché según las condiciones de expiración
+            guardar_en_cache(nombre, v)
             resultado = {"data": v, "source": "MongoDB"}
 
         # Si el vehículo no se encuentra en la base de datos, devolver un mensaje de error

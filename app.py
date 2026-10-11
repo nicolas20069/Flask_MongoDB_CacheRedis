@@ -5,7 +5,83 @@ from config import vehiculos_collection, cache
 app = Flask(__name__)
 
 
+# Ruta para registrar un nuevo vehículo
+@app.route("/vehiculos", methods=["POST"])
+def crear_vehiculo():
+
+    # 1. Recibir la información enviada
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict):
+        return jsonify({
+            "error": "Debes enviar un JSON válido"
+        }), 400
+
+    # 2. Definir los campos obligatorios
+    campos = ["vehiculo", "categoria", "peso", "descripcion"]
+
+    # 3. Verificar que los campos estén completos
+    for campo in campos:
+        if campo not in datos:
+            return jsonify({
+                "error": f"Falta el campo: {campo}"
+            }), 400
+
+    # 4. Validar los tipos de datos
+    for campo in ["vehiculo", "categoria", "descripcion"]:
+        if not isinstance(datos[campo], str) or not datos[campo].strip():
+            return jsonify({
+                "error": f"El campo {campo} debe contener texto"
+            }), 400
+
+    if (isinstance(datos["peso"], bool)
+            or not isinstance(datos["peso"], (int, float))
+            or not 0 < datos["peso"] < float("inf")):
+        return jsonify({
+            "error": "El peso debe ser un número positivo"
+        }), 400
+
+    nombre = datos["vehiculo"].strip()
+
+    # 5. Comprobar si el vehículo ya está registrado
+    existente = vehiculos_collection.find_one({
+        "vehiculo": nombre
+    })
+
+    if existente:
+        return jsonify({
+            "error": "El vehículo ya existe"
+        }), 409
+
+    # 6. Construir el documento para MongoDB
+    nuevo_vehiculo = {
+        "vehiculo": nombre,
+        "categoria": datos["categoria"].strip(),
+        "peso": datos["peso"],
+        "descripcion": datos["descripcion"].strip()
+    }
+
+    # 7. Insertar el documento en MongoDB
+    resultado = vehiculos_collection.insert_one(
+        nuevo_vehiculo
+    )
+
+    # 8. Responder al cliente
+    return jsonify({
+        "mensaje": "Vehículo registrado correctamente",
+        "id": str(resultado.inserted_id),
+        "vehiculo": nuevo_vehiculo["vehiculo"]
+    }), 201
+
+
 # Rutas de la API
+
+# Ruta para mostrar el formulario de registro
+@app.route("/registrar", methods=["GET"])
+def mostrar_formulario_registro():
+    return render_template("registrar.html")
+
+
 # Ruta para obtener todos los vehículos
 @app.route("/vehiculos/<nombre>", methods=["GET"])
 def get_vehiculo(nombre):

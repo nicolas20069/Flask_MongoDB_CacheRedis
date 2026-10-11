@@ -132,3 +132,43 @@ tbody tr:hover {
     line-height: 1.6;
     color: #374151;
 }
+
+
+
+/* ==================================
+   BOTÓN VOLVER A REGISTRAR VEHÍCULO
+================================== */
+
+/* Contenedor del botón */
+.contenedor-boton {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+    margin-bottom: 25px;
+}
+
+/* Estilo del botón */
+.btn-registrar {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #2563eb;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+/* Efecto cuando pasa el mouse */
+.btn-registrar:hover {
+    background-color: #1d4ed8;
+    color: #ffffff;
+}
+
+/* Accesibilidad con teclado */
+.btn-registrar:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 3px;
+}

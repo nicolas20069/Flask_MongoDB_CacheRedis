@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Registrar Vehículo</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 30px 15px;
+        }
+
+        .contenedor {
+            max-width: 520px;
+            margin: 40px auto;
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+            color: #334155;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .mensaje {
+            display: none;
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: 7px;
+            text-align: center;
+        }
+
+        .exito {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .enlace {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #2563eb;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor">
+
+        <h1>Registrar Vehículo</h1>
+
+        <p class="subtitulo">
+            Ingresa la información para registrar
+            un vehículo en MongoDB.
+        </p>
+
+        <form id="formularioVehiculo">
+
+            <label for="vehiculo">
+                Nombre del vehículo
+            </label>
+
+            <input
+                type="text"
+                id="vehiculo"
+                placeholder="Ej: Camioneta"
+                required
+            >
+
+            <label for="categoria">
+                Categoría
+            </label>
+
+            <select id="categoria" required>
+                <option value="">
+                    Selecciona una categoría
+                </option>
+                <option value="Terrestre (motorizado)">
+                    Terrestre (motorizado)
+                </option>
+                <option value="Terrestre (no motorizado)">
+                    Terrestre (no motorizado)
+                </option>
+                <option value="Acuático">Acuático</option>
+                <option value="Aéreo">Aéreo</option>
+                <option value="Espacial">Espacial</option>
+            </select>
+
+            <label for="peso">
+                Peso aproximado (toneladas)
+            </label>
+
+            <input
+                type="number"
+                id="peso"
+                step="any"
+                min="0.000001"
+                placeholder="Ej: 2.5"
+                required
+            >
+
+            <label for="descripcion">
+                Descripción
+            </label>
+
+            <textarea
+                id="descripcion"
+                rows="3"
+                placeholder="Describe el vehículo"
+                required
+            ></textarea>
+
+            <button type="submit" id="botonRegistrar">
+                Registrar Vehículo
+            </button>
+
+        </form>
+
+        <div id="mensaje" class="mensaje" role="status"></div>
+
+        <a href="/tabla" class="enlace">
+            Ver vehículos registrados
+        </a>
+
+    </div>
+
+    <script>
+        const formulario = document.getElementById(
+            "formularioVehiculo"
+        );
+
+        const mensaje = document.getElementById("mensaje");
+        const boton = document.getElementById("botonRegistrar");
+
+        formulario.addEventListener("submit", async function(event) {
+
+            // Evitar que el formulario recargue la página
+            event.preventDefault();
+
+            // Obtener los datos del formulario
+            const datos = {
+                vehiculo: document.getElementById(
+                    "vehiculo"
+                ).value.trim(),
+
+                categoria: document.getElementById(
+                    "categoria"
+                ).value,
+
+                peso: Number(document.getElementById(
+                    "peso"
+                ).value),
+
+                descripcion: document.getElementById(
+                    "descripcion"
+                ).value.trim()
+            };
+
+            mensaje.className = "mensaje";
+            mensaje.textContent = "";
+            boton.disabled = true;
+
+            try {
+
+                // Enviar los datos al POST de Flask
+                const respuesta = await fetch("/vehiculos", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(datos)
+                });
+
+                const resultado = await respuesta.json();
+
+                if (respuesta.ok) {
+
+                    mensaje.textContent =
+                        resultado.mensaje;
+
+                    mensaje.className = "mensaje exito";
+
+                    formulario.reset();
+
+                } else {
+
+                    mensaje.textContent =
+                        resultado.error || "Error al registrar";
+
+                    mensaje.className = "mensaje error";
+                }
+
+            } catch (error) {
+
+                mensaje.textContent =
+                    "No se pudo conectar con el servidor";
+
+                mensaje.className = "mensaje error";
+
+            } finally {
+                boton.disabled = false;
+            }
+        });
+    </script>
+
+</body>
+</html>
